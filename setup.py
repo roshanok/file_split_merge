@@ -44,7 +44,7 @@ version = get_version('file_split_merge')
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
-    
+
 if sys.argv[-1] == 'publish':
     os.system("python setup.py sdist upload")
     print("You probably want to also tag the version now:")
