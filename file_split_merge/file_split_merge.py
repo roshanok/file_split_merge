@@ -39,11 +39,11 @@ class SplitAndCombineFiles:
         """ This method is to get the file chunk sizes"""
         # get the file zize
         self.f_size = os.path.getsize(self.__input_file_name)
-        logging.info("Total file Size : {}".format(str(self.f_size)))
+        log("Total file Size : {}".format(str(self.f_size)))
 
         # get the file chunks
         f_chunk = int(float(self.f_size) / float(self.__chunk))
-        logging.info("Splitting into {} files of {} size".format(str(self.__chunk),
+        log("Splitting into {} files of {} size".format(str(self.__chunk),
                                                         str(f_chunk)))
         return int(f_chunk), int(self.__chunk)
 
@@ -54,7 +54,7 @@ class SplitAndCombineFiles:
 
         # get the file zize
         self.f_size = os.path.getsize(self.__input_file_name)
-        logging.info("Total file Size : {}".format(str(self.f_size)))
+        log("Total file Size : {}".format(str(self.f_size)))
 
         # get the file chunks
         f_chunk = re.sub("\D", "", self.__chunk)
@@ -68,7 +68,7 @@ class SplitAndCombineFiles:
         else:
             no_of_files = 1
 
-        logging.info("Splitting into {} files of {} size".format(str(no_of_files),
+        log("Splitting into {} files of {} size".format(str(no_of_files),
                                                         str(self.__chunk)))
 
         return int(f_chunk), int(no_of_files)
@@ -82,7 +82,7 @@ class SplitAndCombineFiles:
         self.__input_file_name = input_file_name
         self.__chunk = chunk_size
 
-        logging.info("Splitting the File Now")
+        log("Splitting the File Now")
 
         if self.__chunk.isdigit():
             f_chunk, chunk_size = self.get_file_chunks_from_count()
@@ -115,24 +115,24 @@ class SplitAndCombineFiles:
             tot_bytes_in_file += data_length
 
             # Write the chunks to the file
-            logging.info("Creating {}".format(_chunk_file_name))
+            log("Creating {}".format(_chunk_file_name))
             with open(_chunk_file_name, "wb") as _:
                 _.write(data)
 
         _crc_file_name = "{}-{}{}".format(str(self.__input_file_name),
                                           "CRC", str(self.__postfix))
 
-        logging.info("Creating the check file : {}".format(str(_crc_file_name)))
+        log("Creating the check file : {}".format(str(_crc_file_name)))
         with open(_crc_file_name, "w") as crc_file:
             crc_file.write(self.check_list)
 
-        logging.info("File split successfully")
+        log("File split successfully")
 
     def __merge(self, input_file_name):
         """ Merge the Files
         :param input_file_name : filename in .zip format ex : filename.zip
         :return none"""
-        logging.info("Merging the file to {}".format(str(input_file_name)))
+        log("Merging the file to {}".format(str(input_file_name)))
 
         _root_dir, _file_name = os.path.split(
             os.path.realpath(input_file_name))
@@ -140,7 +140,7 @@ class SplitAndCombineFiles:
         _file_path = os.path.join(_root_dir, _file_name)
 
         if os.path.exists(_file_path):
-            logging.info("File Already Exist. Please remove the {} and "
+            log("File Already Exist. Please remove the {} and "
                 "then re-run.".format(str(_file_path)))
 
             # Prompt if file need to be deleted automatically
@@ -153,7 +153,7 @@ class SplitAndCombineFiles:
         # get all the split files available
         file_list = self.get_split_files(_root_dir, _file_name)
         if not file_list:
-            logging.info("No Split files found")
+            log("No Split files found")
             return
 
         # get the crc file
@@ -161,7 +161,7 @@ class SplitAndCombineFiles:
                                           "CRC", str(self.__postfix))
         _crc_file_path = os.path.join(_root_dir,_crc_file_name)
         if not os.path.exists(_crc_file_path):
-            logging.info("{} file is missing".format(str(_crc_file_path)))
+            log("{} file is missing".format(str(_crc_file_path)))
             return
 
         _crc_data = open(_crc_file_path, "r").read()
@@ -170,7 +170,7 @@ class SplitAndCombineFiles:
         # Sort the file names
         for files in sorted(file_list):
             f_name = file_list[files]
-            logging.info("Merging the file {}".format(f_name))
+            log("Merging the file {}".format(f_name))
             with open(input_file_name, 'ab') as new_file:
                 data = open(os.path.join(_root_dir,
                                          f_name), 'rb').read()
@@ -184,14 +184,14 @@ class SplitAndCombineFiles:
                                             int(data_length/2)+1]) \
                                    + str(data[-5:])
         # check the crc data
-        logging.info("Checking if the files are merged properly")
+        log("Checking if the files are merged properly")
         if _crc_data == self.check_list:
-            logging.info("File check : Passed")
+            log("File check : Passed")
         else:
-            logging.info("File check : Failed.")
+            log("File check : Failed.")
             return
 
-        logging.info("File Merged successfully")
+        log("File Merged successfully")
 
     def get_split_files(self, root_dir, file_name):
         """ Find out all the zip files in the folder
@@ -220,11 +220,16 @@ class SplitAndCombineFiles:
 
 def error_args(error_msg):
     """ this is just a error message for args"""
-    logging.info("\n")
-    logging.info("Error :  Arguments provided is invalid")
-    logging.info(error_msg)
-    logging.info("use -h for more details")
+    log("\n")
+    log("Error :  Arguments provided is invalid")
+    log(error_msg)
+    log("use -h for more details")
     exit(usage())
+
+
+def log(value):
+    """ This is just a print method"""
+    print(value)
 
 
 def usage():
