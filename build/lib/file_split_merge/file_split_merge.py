@@ -2,14 +2,13 @@ import os, sys, re
 import logging
 import argparse
 
-
 class SplitAndCombineFiles:
     """ This is a simple class to split and merge the files
 
     1. Split the binary files to the smaller chunks
     2. merge the binary files into the single file
     usage :
-    usage: file_split_merge [-h] [-i INPUT] [-s] [-n CHUNK] [-m]
+    usage: SplitAndCombine.py [-h] [-i INPUT] [-s] [-n CHUNK] [-m]
 
     optional arguments:
       -h, --help            show this help message and exit
@@ -21,12 +20,14 @@ class SplitAndCombineFiles:
       -m, --merge           Merge the Files
 
     examples :
-    file_split_merge -s -i first_project.zip -n 5
-    file_split_merge -s -i first_project.zip -n 5kb
-    file_split_merge -s -i first_project.zip -n 2gb
-    file_split_merge -s -i "c:\temp\first_project.zip" -n 5
-    file_split_merge -m -i first_project.zip
-    file_split_merge -m -i "c:\temp\\first_project.zip"
+    SplitAndCombine.py -s -i first_project.zip -n 5
+    SplitAndCombine.py -s -i first_project.zip -n 5kb
+    SplitAndCombine.py -s -i first_project.zip -n 2gb
+    SplitAndCombine.py -s -i "c:\temp\first_project.zip" -n 5
+    SplitAndCombine.py -m -i first_project.zip
+    SplitAndCombine.py -m -i "c:\temp\\first_project.zip"
+
+    Author : Roshan Krishnappa
     """
     def __init__(self):
         self.__input_file_name = None
@@ -230,7 +231,7 @@ def error_args(error_msg):
 def usage():
     return r"""\n
     --------------------------------------------------------------
-    Usage: file_split_merge [-h] [-i INPUT] [-s] [-n CHUNK] [-m]\n
+    Usage: SplitAndCombine.py [-h] [-i INPUT] [-s] [-n CHUNK] [-m]\n
     optional arguments:
     -h, --help            show this help message and exit
     -i INPUT, --input INPUT
@@ -247,12 +248,12 @@ def usage():
 
 
     examples :
-    file_split_merge -s -i first_project.zip -n 5
-    file_split_merge -s -i first_project.zip -n 5kb
-    file_split_merge -s -i first_project.zip -n 2gb
-    file_split_merge -s -i "c:\temp\first_project.zip" -n 5
-    file_split_merge -m -i first_project.zip
-    file_split_merge -m -i "c:\temp\\first_project.zip"
+    SplitAndCombine.py -s -i first_project.zip -n 5
+    SplitAndCombine.py -s -i first_project.zip -n 5kb
+    SplitAndCombine.py -s -i first_project.zip -n 2gb
+    SplitAndCombine.py -s -i "c:\temp\first_project.zip" -n 5
+    SplitAndCombine.py -m -i first_project.zip
+    SplitAndCombine.py -m -i "c:\temp\\first_project.zip"
     ----------------------------------------------------------------
     """
 
@@ -288,7 +289,6 @@ def main():
         else:
             sm = SplitAndCombineFiles()
             sm.merge(args.input)
-
 
 if __name__ == "__main__":
     main()
