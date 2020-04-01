@@ -60,6 +60,7 @@ setup(
     license='BSD',
     description='Commandline scripts to split or merge files',
     long_description = long_description,
+    long_description_content_type='text/markdown',
     author='Roshan Krishnappa',
     author_email='roshan.ok@gmail.com',
     packages=get_packages('file_split_merge'),
