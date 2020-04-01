@@ -59,6 +59,7 @@ setup(
     url='http://github.com/roshanok/file_split_merge/',
     license='BSD',
     description='Commandline scripts to split or merge files',
+    long_description = long_description,
     author='Roshan Krishnappa',
     author_email='roshan.ok@gmail.com',
     packages=get_packages('file_split_merge'),
