@@ -94,7 +94,6 @@ class SplitAndCombineFiles:
         total_count = 0
         last_chunk = False
         chunk_size = chunk_size * 1024 * 8  # convert to mb
-        print(chunk_size)
         # If chunk_size is greater than the read_until, then
         # default the chunk_size to read_until
         if not read_until == -1 and \
