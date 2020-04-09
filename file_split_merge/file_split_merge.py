@@ -1,6 +1,7 @@
 import os, sys, re
 import logging
 import argparse
+import time
 
 
 class SplitAndCombineFiles:
@@ -73,6 +74,59 @@ class SplitAndCombineFiles:
 
         return int(f_chunk), int(no_of_files)
 
+    @staticmethod
+    def read_file_in_chunks(file_obj, read_until=-1, chunk_size=5):
+        """
+        Lazy function to read a file piece by piece.
+        Default chunk size: 5mb.
+        :param file_obj : The file open object which has to be read
+        :param read_until : How much of total chunk has to be read from
+                            the file.
+                            Default = -1 i.e read full file
+        :param chunk_size : How much of chunk has to be read in one iter
+                            Default chunk size: 5mb.
+        :return Data Generator
+        """
+
+        tot_read = 0
+        total_iter = 0
+        total_count = 0
+        last_chunk = False
+        chunk_size = chunk_size * 1024 * 8  # convert to mb
+
+        # If chunk_size is greater than the read_until, then
+        # default the chunk_size to read_until
+        if not read_until == -1 and \
+                (read_until < chunk_size):
+            chunk_size = read_until
+
+        # if not reading full file , count total iteration required to
+        # accumulate the read_until size.
+        if not read_until == -1:
+            total_iter = int(read_until/chunk_size)
+
+        while True:
+            # If not reading full file, then calculate the remaining chunks
+            # in the last iteration
+            if (total_count == total_iter - 1) and not read_until == -1:
+                chunk_size = read_until - tot_read
+                last_chunk = True
+
+            data = file_obj.read(chunk_size)
+            tot_read += len(data)
+            total_count += 1
+
+            # if data is present , then yiled , else break
+            if data:
+                yield data
+            else:
+                break
+
+            # If this is a last chunk, then break
+            if last_chunk:
+                # print(total_count, total_iter, chunkSize)
+                break
+
     def __split(self, input_file_name, chunk_size):
         """ Split the files
         :param input_file_name : The filename which has to be split
@@ -95,6 +149,9 @@ class SplitAndCombineFiles:
 
         # Iterate through chunk size
         for i in range(int(chunk_size)):
+            log(" - Splitting {}/{} files".format(str(i+1),
+                                               str(int(chunk_size))))
+
             _chunk_file_name = "{}-{}{}".format(str(self.__input_file_name),
                                                 str(i+1),
                                                 str(self.__postfix))
@@ -104,25 +161,29 @@ class SplitAndCombineFiles:
                 f_chunk = self.f_size - tot_bytes_in_file
 
             # Read the chunks from the file
-            data = read_main_file.read(f_chunk)
+            # data = read_main_file.read(f_chunk)
+            data = self.read_file_in_chunks(read_main_file, read_until=f_chunk)
 
-            # create the content for the file copy check
-            data_length = len(data)
-            self.check_list += str(data[:5]) + str(
-                data[int(data_length / 2) - 1:
-                     int(data_length / 2) + 1]) + str(data[-5:])
-
-            tot_bytes_in_file += data_length
-
-            # Write the chunks to the file
-            log("Creating {}".format(_chunk_file_name))
+            # collect the first chunk and last chunk of every file
+            # This content is used for verification while merging
+            first_check = None
+            last_check = None
             with open(_chunk_file_name, "wb") as _:
-                _.write(data)
+                for chunks in data:
+                    if not first_check:
+                        first_check = chunks[5]
+                    last_check = chunks[-5]
+                    _.write(chunks)
+
+            tot_bytes_in_file += f_chunk
+
+            # crc content
+            self.check_list += str(first_check) + "-" + str(last_check)
 
         _crc_file_name = "{}-{}{}".format(str(self.__input_file_name),
                                           "CRC", str(self.__postfix))
 
-        log("Creating the check file : {}".format(str(_crc_file_name)))
+        # log("Creating the check file : {}".format(str(_crc_file_name)))
         with open(_crc_file_name, "w") as crc_file:
             crc_file.write(self.check_list)
 
@@ -168,21 +229,27 @@ class SplitAndCombineFiles:
 
         # Merge the files
         # Sort the file names
+        log("Found {} file(s) for merging".format(len(file_list)))
         for files in sorted(file_list):
             f_name = file_list[files]
-            log("Merging the file {}".format(f_name))
+            log(" - Merging {} file".format(f_name))
+            # collect the first chunk and last chunk of every file
+            # This content is used for verification while merging
+            first_check = None
+            last_check = None
             with open(input_file_name, 'ab') as new_file:
-                data = open(os.path.join(_root_dir,
-                                         f_name), 'rb').read()
-
-                new_file.write(data)
+                read_main_file = open(os.path.join(_root_dir,
+                                                   f_name), 'rb')
+                data = self.read_file_in_chunks(read_main_file, read_until=-1)
+                for chunks in data:
+                    if not first_check:
+                        first_check = chunks[5]
+                    last_check = chunks[-5]
+                    new_file.write(chunks)
 
                 # create the content for the file copy check
-                data_length = len(data)
-                self.check_list += str(data[:5]) + \
-                                   str(data[int(data_length/2)-1:
-                                            int(data_length/2)+1]) \
-                                   + str(data[-5:])
+                self.check_list += str(first_check) + "-" + str(last_check)
+
         # check the crc data
         log("Checking if the files are merged properly")
         if _crc_data == self.check_list:
@@ -263,6 +330,8 @@ def usage():
 
 
 def main():
+    start_time = time.time()
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--input',
                         help="Provide the File that needs to be Split")
@@ -276,23 +345,31 @@ def main():
     args = parser.parse_args()
 
     # Perform Split Operation
+
     if not (args.split or args.merge):
         error_args("-s or -m has to be Specified")
 
     if args.split:
+        log("\n------------- STARTING FILE SPLIT -------------\n")
         if not(args.input and args.chunk):
             error_args("Split command requires -i and -n")
         else:
             sm = SplitAndCombineFiles()
+
             sm.split(args.input, args.chunk)
+
 
     # Perform Merge Operation
     if args.merge:
+        log("\n------------- STARTING FILE MERGE -------------\n")
         if not args.input:
             error_args("Merge command requires -i")
         else:
             sm = SplitAndCombineFiles()
+            start_time = time.time()
             sm.merge(args.input)
+
+    log("Complete in {} seconds".format(str(int(time.time() - start_time))))
 
 
 if __name__ == "__main__":
