@@ -35,6 +35,7 @@ class SplitAndCombineFiles:
         self.__postfix = '.ros'
         self.f_size = 0
         self.check_list = ""
+        self.data_read_chunk = 5
 
     def get_file_chunks_from_count(self):
         """ This method is to get the file chunk sizes"""
@@ -93,7 +94,7 @@ class SplitAndCombineFiles:
         total_count = 0
         last_chunk = False
         chunk_size = chunk_size * 1024 * 8  # convert to mb
-
+        print(chunk_size)
         # If chunk_size is greater than the read_until, then
         # default the chunk_size to read_until
         if not read_until == -1 and \
@@ -162,7 +163,8 @@ class SplitAndCombineFiles:
 
             # Read the chunks from the file
             # data = read_main_file.read(f_chunk)
-            data = self.read_file_in_chunks(read_main_file, read_until=f_chunk)
+            data = self.read_file_in_chunks(read_main_file, read_until=f_chunk,
+                                            chunk_size = self.data_read_chunk)
 
             # collect the first chunk and last chunk of every file
             # This content is used for verification while merging
@@ -240,7 +242,10 @@ class SplitAndCombineFiles:
             with open(input_file_name, 'ab') as new_file:
                 read_main_file = open(os.path.join(_root_dir,
                                                    f_name), 'rb')
-                data = self.read_file_in_chunks(read_main_file, read_until=-1)
+                data = self.read_file_in_chunks(read_main_file,
+                                                read_until=-1,
+                                                chunk_size=
+                                                self.data_read_chunk)
                 for chunks in data:
                     if not first_check:
                         first_check = chunks[5]
@@ -341,6 +346,10 @@ def main():
                         help="No. of Chunks to be created")
     parser.add_argument('-m', '--merge', action="store_true",
                         help="Merge the Files")
+    parser.add_argument('-r', '--read', default=5,type=int,
+                        help="The speed at which data has to be read. "
+                             "Higher the value , faster the process, "
+                             "but possible memory leak")
 
     args = parser.parse_args()
 
@@ -355,7 +364,7 @@ def main():
             error_args("Split command requires -i and -n")
         else:
             sm = SplitAndCombineFiles()
-
+            sm.data_read_chunk = args.read
             sm.split(args.input, args.chunk)
 
 
@@ -366,7 +375,7 @@ def main():
             error_args("Merge command requires -i")
         else:
             sm = SplitAndCombineFiles()
-            start_time = time.time()
+            sm.data_read_chunk = args.read
             sm.merge(args.input)
 
     log("Complete in {} seconds".format(str(int(time.time() - start_time))))
